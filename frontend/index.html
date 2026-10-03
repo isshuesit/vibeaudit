@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VIBEAUDIT — Trust / Security Gap Scanner</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23090909'/%3E%3Ctext x='8' y='12' font-size='10' font-family='sans-serif' fill='%23F1F0EC' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="bug.css" />
+</head>
+<body>
+
+<div id="noise-overlay" class="overlay" hidden>
+  <div class="overlay-panel" role="alertdialog" aria-labelledby="noise-title" aria-describedby="noise-detail">
+    <p class="overlay-kicker">Connection</p>
+    <h2 class="overlay-title" id="noise-title">Backend unreachable</h2>
+    <p class="overlay-detail" id="noise-detail">Target unreachable.</p>
+    <button class="run-btn ghost" id="noise-dismiss">Dismiss</button>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="wordmark">
+    <span class="wordmark-main">VIBEAUDIT</span>
+    <span class="wordmark-sub">TRUST&#8202;/&#8202;SECURITY GAP SCANNER</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab active" data-tab="single" role="tab" aria-selected="true">Single</button>
+    <button class="tab" data-tab="batch" role="tab" aria-selected="false">Batch</button>
+    <button class="tab" data-tab="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
+    <button class="tab" data-tab="about" role="tab" aria-selected="false">Method</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- SINGLE AUDIT -->
+  <section class="panel active" id="panel-single">
+    <div class="target-field">
+      <label class="field-label" for="single-url">Target URL</label>
+      <div class="field-row">
+        <input type="text" id="single-url" placeholder="https://example.com" autocomplete="off" spellcheck="false" inputmode="url" />
+        <button id="single-run" class="run-btn" type="button">Run audit</button>
+      </div>
+    </div>
+
+    <div id="single-status" class="status-line" aria-live="polite"></div>
+
+    <section id="single-intro" class="intro" aria-label="What VIBEAUDIT examines">
+      <p class="intro-state">No audit run in this session.</p>
+      <h2 class="intro-title">What VIBEAUDIT examines</h2>
+      <dl class="intro-list">
+        <div>
+          <dt>Security posture</dt>
+          <dd>Technical controls and protective configuration.</dd>
+        </div>
+        <div>
+          <dt>Trust signals</dt>
+          <dd>Patterns that may artificially influence perceived credibility.</dd>
+        </div>
+        <div>
+          <dt>Human risk</dt>
+          <dd>A structured assessment of potential user-facing risk.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <div id="single-wrap" hidden>
+
+      <section id="tsga-banner" class="report-hero" aria-label="Trust / security gap">
+        <div class="hero-score">
+          <span class="hero-number" id="tsga-number">&mdash;</span>
+          <div class="hero-meta">
+            <span class="hero-band" id="tsga-band">No score</span>
+            <span class="hero-caption">Trust / security gap</span>
+            <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+
+        <dl class="hero-stats">
+          <div><dt>UTST</dt><dd id="tsga-utst-n">&mdash;</dd></div>
+          <div><dt>SPC</dt><dd id="tsga-spc-n">&mdash;</dd></div>
+          <div><dt>gap</dt><dd id="tsga-gap">&mdash;</dd></div>
+        </dl>
+
+        <div class="hri">
+          <div class="hri-head">
+            <span class="hri-label">Habituation risk index <span class="tech-id">HRI</span></span>
+            <span class="hri-value" id="hri-value">Not assessed</span>
+          </div>
+          <input type="range" id="hri-range" min="0" max="100" value="0" step="5" aria-label="Habituation Risk Index, 0 to 1" />
+          <div class="hri-foot">
+            <button id="hri-clear" class="run-btn ghost mini" type="button">Mark not assessed</button>
+            <span class="muted-note">Manual 0&ndash;1 judgement. The (1 + HRI) multiplier stays at 1 until set.</span>
+          </div>
+        </div>
+
+        <p class="hero-finding" id="tsga-desc"></p>
+      </section>
+
+      <div id="single-result" class="report-cols">
+        <section class="report-col">
+          <div class="col-head">
+            <h2>Security posture</h2>
+            <span class="tech-id">SPC</span>
+          </div>
+          <div class="indicator-list" id="spc-indicators"></div>
+        </section>
+        <section class="report-col">
+          <div class="col-head">
+            <h2>Trust signals</h2>
+            <span class="tech-id">UTST</span>
+          </div>
+          <div class="utst-subtotal">
+            <span class="utst-number" id="utst-subtotal">0</span>
+            <span class="utst-label">weighted score</span>
+          </div>
+          <div class="log-feed" id="utst-log"></div>
+        </section>
+      </div>
+
+      <div class="report-actions">
+        <button id="single-copy" class="run-btn ghost mini" type="button">Copy JSON</button>
+        <button id="single-download" class="run-btn ghost mini" type="button">Download JSON</button>
+        <span id="single-notes"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BATCH AUDIT -->
+  <section class="panel" id="panel-batch">
+    <h1 class="panel-title">Batch audit</h1>
+    <p class="panel-lede">One URL per line. Optionally prefix a name: <code>name, https://url.com</code>. Requests are spaced out to stay polite to target servers.</p>
+
+    <textarea id="batch-input" rows="8" placeholder="https://example.com&#10;Example, https://example.org"></textarea>
+    <div class="input-row">
+      <button id="batch-run" class="run-btn" type="button">Run batch</button>
+      <span id="batch-progress" class="status-line" aria-live="polite"></span>
+    </div>
+
+    <div id="batch-summary" class="batch-summary" hidden></div>
+
+    <div class="table-scroll">
+      <table class="results-table" id="batch-table" hidden>
+        <thead>
+          <tr>
+            <th>App</th><th>HTTPS</th><th>Privacy</th><th>Hdrs</th><th>UTST</th>
+            <th>Gap</th><th>Band</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="batch-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="batch-actions" class="report-actions" hidden>
+      <button id="batch-csv" class="run-btn ghost mini" type="button">Download CSV</button>
+      <button id="batch-json" class="run-btn ghost mini" type="button">Download JSON</button>
+      <button id="batch-md" class="run-btn ghost mini" type="button">Download Markdown</button>
+      <span class="muted-note">Select a row to see the patterns it matched.</span>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="panel" id="panel-leaderboard">
+    <h1 class="panel-title">Audit history</h1>
+    <p class="panel-lede">Every audit run against this backend, one row per target. Re-auditing a target replaces its earlier row.</p>
+
+    <div class="input-row">
+      <span class="lb-count"><span id="leaderboard-count">0</span> records</span>
+      <label class="lb-sort">Sort
+        <select id="leaderboard-sort">
+          <option value="rank">TSGA / gap</option>
+          <option value="utst">UTST</option>
+          <option value="date">Most recent</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+      <button id="leaderboard-refresh" class="run-btn ghost mini" type="button">Refresh</button>
+      <button id="leaderboard-clear" class="run-btn ghost mini danger" type="button">Clear</button>
+    </div>
+    <div class="table-scroll">
+      <table class="results-table" id="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th><th>App</th><th>TSGA</th><th>Band</th><th>Gap sig</th><th>UTST</th>
+            <th>HTTPS</th><th>Privacy</th><th>Audited</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- METHOD -->
+  <section class="panel" id="panel-about">
+    <h1 class="panel-title">Method</h1>
+    <div class="about-content">
+      <p class="panel-lede">VIBEAUDIT automates the checkable portion of a Trust&ndash;Security Gap analysis. Everything below is derived from a single static fetch; nothing is inferred.</p>
+
+      <h2>What this measures</h2>
+      <p>Whether a page is served over HTTPS, whether it links a privacy policy, which of five security response headers are set, and whether specific text patterns associated with trust inflation appear &mdash; confidence-sounding percentages, unverified performance claims, third-party launch badges, testimonial language, manufactured urgency, guarantee and superlative-authority phrasing.</p>
+
+      <h2>The gap score</h2>
+      <p>Both subtotals are normalised to 0&ndash;10 against the maximum the automated checks could produce, then combined as <code>(UTST_norm &minus; SPC_norm) &times; (1 + HRI)</code>. HRI is never inferred &mdash; until it is set with the control on the report it stays at 0, so the headline figure is the raw trust / security gap. Bands: <b>Low</b> &lt; 2, <b>Moderate</b> 2&ndash;5, <b>High</b> 5&ndash;8, <b>Severe</b> &ge; 8.</p>
+
+      <h2>What it does not measure</h2>
+      <p>Visual professionalism, iconography quality, feature-attribution highlights, and habituation risk require a human eye and are not scored automatically. A high UTST subtotal or gap is a signal worth checking by hand, not a verdict.</p>
+
+      <h2>Blank-page results are findings, not failures</h2>
+      <p>If a page returns almost no visible text, this tool does not execute JavaScript to render it. That is treated as data: the app relies entirely on client-side rendering with no fallback content for anything reading it non-interactively.</p>
+
+      <h2>Redirects and connection downgrades</h2>
+      <p>HTTPS is scored on the final URL after redirects. A request that starts on HTTPS but lands on HTTP is flagged as a downgrade and scored as not secure.</p>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+<script src="bug.js"></script>
+</body>
+</html>

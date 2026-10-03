@@ -1,0 +1,204 @@
+/* ============================================================
+   Audit bug — an ambient companion layer for VIBEAUDIT.
+   Uses the existing tokens (--bg / --surface / --border / --text*).
+   Purely additive: no existing selector is modified.
+   ============================================================ */
+
+.bug-root {
+  position: fixed;
+  right: clamp(14px, 4vw, 46px);
+  bottom: clamp(14px, 5vh, 52px);
+  z-index: 60;                 /* above content, below the .overlay (1000) */
+  width: 82px;
+  pointer-events: none;         /* never intercepts clicks on the app */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+
+.bug-root.is-in {
+  opacity: 0.62;
+  transform: translateY(0);
+}
+
+.bug-root.is-in.is-speaking,
+.bug-root.is-in.is-active {
+  opacity: 1;
+}
+
+.bug-root.is-hidden {
+  opacity: 0 !important;
+  transform: translateY(10px) scale(.94);
+}
+
+/* ---- the specimen ---- */
+
+.bug-figure {
+  display: block;
+  width: 82px;
+  height: 82px;
+  color: var(--text-2);
+  overflow: visible;
+}
+
+.bug-root.is-speaking .bug-figure,
+.bug-root.is-active .bug-figure { color: var(--text); }
+
+.bug-figure path,
+.bug-figure line,
+.bug-figure circle,
+.bug-figure ellipse {
+  vector-effect: non-scaling-stroke;
+}
+
+.bug-farside { opacity: .45; }
+
+.bug-eye { transform-box: fill-box; transform-origin: center; }
+
+.bug-lens-grp { transform-box: fill-box; transform-origin: center; }
+
+/* subtle whole-body reaction poses (JS toggles the class briefly) */
+.bug-figure {
+  transition: transform .5s cubic-bezier(.22,.61,.36,1);
+  transform-box: fill-box;
+  transform-origin: 60% 70%;
+}
+.bug-root.pose-glance-left  .bug-figure { transform: translateX(-3px) rotate(-3deg); }
+.bug-root.pose-glance-right .bug-figure { transform: translateX(2px)  rotate(3deg); }
+.bug-root.pose-inspect      .bug-figure { transform: translateX(-4px) rotate(-4deg) scale(1.02); }
+.bug-root.pose-turn         .bug-figure { transform: rotate(-6deg); }
+.bug-root.pose-hop          .bug-figure { animation: bug-hop .5s ease; }
+.bug-root.pose-step         .bug-figure { animation: bug-step .9s ease; }
+
+@keyframes bug-hop {
+  0%, 100% { transform: translateY(0); }
+  45%      { transform: translateY(-7px); }
+}
+@keyframes bug-step {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-6px) rotate(-1deg); }
+  100% { transform: translateX(0); }
+}
+
+/* ---- idle life: blink + antenna drift ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .bug-eye {
+    animation: bug-blink 7.5s ease-in-out infinite;
+  }
+  .bug-ant-l { animation: bug-ant 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+  .bug-ant-r { animation: bug-ant 6.7s ease-in-out infinite reverse; transform-box: fill-box; transform-origin: bottom center; }
+  .bug-lens-grp { animation: bug-lens 9s ease-in-out infinite; }
+
+  @keyframes bug-blink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    94%           { transform: scaleY(.1); }
+  }
+  @keyframes bug-ant {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(-6deg); }
+  }
+  @keyframes bug-lens {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(6deg); }
+  }
+}
+
+/* ---- speech bubble ---- */
+
+.bug-bubble {
+  position: absolute;
+  right: 6px;
+  bottom: calc(100% + 12px);
+  width: max-content;
+  max-width: min(272px, calc(100vw - 40px));
+  padding: 11px 13px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+
+.bug-bubble.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* pointer toward the specimen */
+.bug-bubble::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.bug-bubble .k {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.bug-bubble .bug-kicker {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.bug-bubble .bug-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.bug-bubble .bug-blurb {
+  display: block;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+/* ---- discovery counter inside the Method panel ---- */
+
+.bug-dcount {
+  margin: 40px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+/* ---- responsive / motion ---- */
+
+@media (max-width: 560px) {
+  .bug-root { width: 58px; right: 10px; bottom: 10px; }
+  .bug-figure { width: 58px; height: 58px; }
+  .bug-bubble { font-size: 12px; max-width: min(220px, calc(100vw - 28px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bug-root,
+  .bug-figure,
+  .bug-bubble { transition: opacity .12s linear; }
+  .bug-root.pose-hop .bug-figure,
+  .bug-root.pose-step .bug-figure { animation: none; }
+  .bug-root[class*="pose-"] .bug-figure { transform: none; }
+}
