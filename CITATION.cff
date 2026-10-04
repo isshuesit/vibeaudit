@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "VibeAudit"
+message: "If you use VibeAudit or the Trust-Security Gap Analysis framework in your research, please cite the accompanying paper."
+type: software
+
+authors:
+  - family-names: Soryan
+    given-names: Ishita
+    affiliation: "SCSET, Bennett University"
+
+repository-code: "https://github.com/isshuesit/vibeaudit"
+
+abstract: "VibeAudit is a research companion tool for the Trust-Security Gap Analysis (TSGA) framework applied to AI-generated and AI-assisted interfaces."
+
+license: MIT
+
+keywords:
+  - cybersecurity
+  - usable-security
+  - human-computer-interaction
+  - trust-calibration
+  - vibe-coding
+  - security-research
+  - research-tool

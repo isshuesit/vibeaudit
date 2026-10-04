@@ -1,140 +1,320 @@
 # VibeAudit
 
-A tool that automates the checkable part of the **Trust-Security Gap
-Analysis (TSGA)** framework: does a site use HTTPS, does it link a privacy
-policy, which security response headers are set, and does its text contain
-patterns associated with trust inflation (unverified performance claims,
-confidence-sounding percentages, third-party launch badges, testimonial
-language, manufactured urgency, guarantee and superlative-authority
-phrasing)?
+VibeAudit is a research companion tool for the **Trust-Security Gap Analysis (TSGA)** framework proposed in:
 
-From those automated subtotals it computes a **TSGA gap score and band**.
-The Habituation Risk Index (HRI) is never inferred — you supply it by hand,
-or leave it unassessed and the score is the raw trust/security gap.
+> **Explaining Away Security: XAI UI Patterns, Habituation, and the Trust-Security Gap in AI-Generated Interfaces**
+> Ishita Soryan, SCSET, Bennett University
 
-Built as the companion tool for a research paper on the trust-security gap
-in AI-generated ("vibe-coded") interfaces. It does not claim to fully
-automate TSGA scoring — see [Scope](#scope-what-this-tool-does-and-doesnt-do).
+The project examines the gap between trust signals presented by AI-generated ("vibe-coded") interfaces and their externally observable security posture.
 
-## Quick start
+VibeAudit automates the checkable portion of the framework: HTTPS, privacy-policy presence, selected security response headers, and text-based patterns associated with trust inflation. It then computes the corresponding TSGA score.
+
+It does **not** claim to fully automate TSGA assessment. Visual professionalism, interaction patterns, feature-attribution cues, and the Habituation Risk Index (HRI) require human assessment.
+
+---
+
+## Research Context
+
+The tool was developed as the implementation companion to the accompanying research paper.
+
+The paper defines TSGA as:
+
+```text
+gap = UTST_normalized - SPC_normalized
+
+TSGA_base = gap * (1 + HRI)
+```
+
+where:
+
+- **UTST** = User Trust Signal Taxonomy
+- **SPC** = Security Posture Checklist
+- **HRI** = Habituation Risk Index
+
+HRI is normalized to a 0–1 scale. When HRI is not assessed, the tool uses 0 for the multiplier and reports the HRI source as `not_assessed`.
+
+The paper's pilot study evaluated 25 publicly accessible AI-generated or AI-assisted interfaces. The reported pilot scores ranged from **-7.87 to 10.80**.
+
+The paper treats the negative-gap case separately: a negative score indicates that the observable security posture exceeds the measured trust-signal subtotal rather than representing a security deficit.
+
+---
+
+## Current Implementation
+
+The current repository contains an expanded implementation of the paper's framework.
+
+The research paper describes the automated evaluation used in its pilot as a smaller text-detectable subset of the UTST taxonomy. The repository has since been extended to include additional text-detectable patterns while retaining the paper's scoring framework.
+
+The current implementation includes:
+
+- HTTPS detection
+- Final-URL security checking after redirects
+- HTTPS-to-HTTP downgrade detection
+- Privacy-policy link detection
+- Selected security response-header checks
+- Text-based UTST pattern detection
+- TSGA score calculation
+- Manual HRI input
+- Optional time-projection calculation when an explicit `drift_rate` is supplied
+- CLI auditing
+- Batch auditing
+- Web UI and API
+- Offline unit and integration tests
+
+The additional text patterns are heuristic extensions and are not presented as empirically validated additions to the original taxonomy.
+
+---
+
+## Quick Start
+
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
+```
 
-# Web UI + API
+### Run the Web Application
+
+```bash
 uvicorn api.server:app --reload
-# then open http://localhost:8000
+```
 
-# CLI - single URL (human-readable summary)
+Then open:
+
+```text
+http://localhost:8000
+```
+
+### Audit a Single URL
+
+```bash
 python -m vibeaudit audit https://example.com
+```
 
-# ...with a manual Habituation Risk Index and a JSON dump to disk
+### Audit with a Manually Supplied HRI
+
+```bash
 python -m vibeaudit audit https://example.com --hri 0.6 --json --out result.json
+```
 
-# CLI - batch (urls.csv: one URL per line, or "name,url")
+### Batch Audit
+
+Input file:
+
+```text
+urls.csv
+```
+
+One URL per line, or:
+
+```text
+name,url
+```
+
+Run:
+
+```bash
 python -m vibeaudit batch urls.csv --output results.csv
-python -m vibeaudit batch urls.csv --output report.md   --format md
+```
+
+Markdown report:
+
+```bash
+python -m vibeaudit batch urls.csv --output report.md --format md
+```
+
+HTML report:
+
+```bash
 python -m vibeaudit batch urls.csv --output report.html --format html
 ```
 
-## Run the tests
+---
+
+## Run the Tests
 
 ```bash
 pytest tests/
 ```
 
-Tests run entirely against local HTML fixtures and a throwaway in-process
-HTTP server — no outbound network access needed, so they'll pass in CI or
-an offline sandbox.
+The test suite uses local HTML fixtures and a throwaway in-process HTTP server. Tests do not require outbound network access.
 
-## Project layout
+---
 
-```
-vibeaudit/           Core library (fetcher, scorer, patterns, CLI, TSGA math, reports)
-api/server.py        FastAPI backend - serves the API and the frontend
-frontend/            Vanilla HTML/CSS/JS UI (no build step required)
-tests/               Unit + integration tests, all offline
-```
+## Project Structure
 
-The core library has no dependency on the API or CLI — both are thin
-wrappers around the same `fetch()` → `score()` → `tsga` pipeline, so
-there's exactly one place the scoring logic lives.
-
-## The TSGA score
-
-Both automated subtotals are normalised to 0–10 against the maximum the
-automated checks could produce (this is an **absolute** scale relative to
-the pattern table, not the sample-relative normalisation in Paper 2's
-pilot), then combined:
-
-```
-gap        = UTST_normalized - SPC_normalized
-TSGA_base  = gap * (1 + HRI)          # HRI is 0..1, or 0 when "not assessed"
+```text
+vibeaudit/
+├── api/
+│   └── server.py
+├── frontend/
+├── tests/
+├── vibeaudit/
+│   ├── fetcher
+│   ├── scorer
+│   ├── patterns
+│   ├── CLI
+│   ├── reports
+│   └── TSGA scoring
+├── .gitignore
+├── CITATION.cff
+├── LICENSE
+├── README.md
+├── leaderboard.json
+└── requirements.txt
 ```
 
-Bands: **Low** < 2, **Moderate** 2–5, **High** 5–8, **Severe** ≥ 8. A
-negative gap (SPC keeps pace with UTST) lands in Low, not Severe.
+The core library contains the scoring and auditing logic, while the API and CLI act as interfaces to the same pipeline.
 
-Time projection (`TSGA_projected`) still refuses to return a number unless
-you pass an explicit `drift_rate` — see the limitations below.
+---
 
-Endpoints: `POST /api/audit`, `POST /api/audit/batch`, `POST /api/tsga`
-(recompute the figure for an already-audited page with a new HRI, no
-re-fetch), `GET /api/leaderboard?sort=rank|utst|date|name`.
+## Automated Checks
 
-## Scope: what this tool does and doesn't do
+The current implementation automatically evaluates:
 
-**Automated (this tool):**
-- HTTPS presence, scored on the final URL after redirects (an HTTPS→HTTP
-  downgrade is flagged and scored as not-secure)
-- Privacy policy link presence (10-language regex)
-- A subset of security response headers (CSP, HSTS, X-Frame-Options,
-  X-Content-Type-Options, Referrer-Policy)
-- Fourteen text-pattern checks from the UTST taxonomy (see
-  `vibeaudit/patterns.py`)
-- The TSGA gap / band, with HRI held at 0 unless supplied
+### Security Posture
 
-**Deliberately NOT automated — needs a human:**
-- Visual professionalism, iconography, layout quality
+- HTTPS presence
+- Final URL after redirects
+- HTTPS-to-HTTP downgrade
+- Privacy-policy link presence
+- Content-Security-Policy
+- Strict-Transport-Security
+- X-Frame-Options
+- X-Content-Type-Options
+- Referrer-Policy
+
+### Trust-Signal Text Patterns
+
+The current implementation contains fourteen text-detectable patterns covering areas such as:
+
+- Confidence and numerical performance claims
+- AI capability claims
+- Process-transparency labels
+- Security claims and security-theater phrasing
+- Testimonials and user ratings
+- Third-party recognition and launch badges
+- Guarantee or risk-reversal language
+- Manufactured urgency and scarcity
+- Live-activity social-proof signals
+- Press and media endorsement
+- Superlative authority claims
+- Uncertainty acknowledgments
+
+These patterns operate on text/HTML that can be inspected without a human evaluating the visual design.
+
+---
+
+## What Remains Manual
+
+VibeAudit deliberately does not attempt to infer every component of TSGA automatically.
+
+The following require human assessment:
+
+- Visual professionalism
+- Layout quality
+- Professional iconography
 - Feature-attribution highlights
-- Habituation Risk Index (HRI) — repeated-exposure judgement a single
-  static fetch cannot make; enter it manually via `--hri` or the UI slider
-- The UTST patterns beyond the fourteen in `patterns.py`
+- Interaction confidence patterns
+- Habituation Risk Index (HRI)
+- Trust signals that cannot be reliably detected from page text or HTML
+- UTST dimensions outside the automated implementation
 
-A page scoring 0 on the automated checks is **not** a clean bill of health
-— it means nothing in the automated subset fired. Use this tool to flag
-candidates for manual review, not as a final verdict.
+A page receiving a low automated score is **not** a clean bill of health.
 
-## Known limitations (found during testing, not swept under the rug)
+The tool is intended to identify candidates for further assessment, not to replace a security audit or human evaluation.
 
-- **JavaScript is not executed.** Client-side-rendered pages show up as
-  near-empty. This is treated as a real, reportable signal
-  (`likely_blank_page`) — the app has no non-JS fallback content — rather
-  than a fetch failure, but a "blank" result needs a manual look before
-  you conclude anything about the app's actual content.
-- **Multilingual pattern coverage is still partial.** The privacy-link
-  regex covers ten languages; a subset of the trust-signal patterns carry
-  French/Spanish/German/Italian keywords. Non-Latin scripts and long-tail
-  languages are not covered and will under-report. This remains the
-  single most valuable thing to extend next.
-- **Response bodies are capped at 3 MB** and non-HTML content types are
-  fetched but not text-scored (headers/HTTPS still count). Both are noted
-  in the result rather than hidden.
-- **The backend refuses private/loopback/link-local targets by default**
-  (SSRF guard). Set `VIBEAUDIT_ALLOW_PRIVATE=1` to audit `localhost` etc.
-- **Security headers require a real HTTP fetch.** A pasted-HTML workflow
-  would correctly show nothing found — it degrades safely rather than
-  guessing.
-- **The `drift_rate` value in `tsga.py` has no empirical basis.** Paper 2
-  is explicit that this parameter needs a longitudinal user study that has
-  not been run. `compute_tsga_projection` returns `None` unless you supply
-  a rate — and doing so is a research claim you're making, not a fact the
-  tool knows.
-- **Added patterns are weighted by analogy.** The five patterns added
-  beyond Paper 2's tables (urgency/scarcity, live-activity tickers,
-  guarantee language, superlative authority, security-theater phrasing)
-  are weighted to the closest paper category, not from the paper directly.
+---
+
+## TSGA Scoring
+
+The automated subtotals are normalized to a 0–10 scale relative to the maximum available points for the current automated checks.
+
+The base score is:
+
+```text
+TSGA_base = (UTST_normalized - SPC_normalized) * (1 + HRI_normalized)
+```
+
+where `HRI_normalized` ranges from 0 to 1.
+
+If HRI is not assessed, the multiplier defaults to 1.
+
+The current implementation classifies scores as:
+
+| Score | Band |
+|---:|---|
+| < 2 | Low |
+| 2–5 | Moderate |
+| 5–8 | High |
+| ≥ 8 | Severe |
+
+Negative scores are treated as part of the lowest band by the implementation. In the research paper, negative gaps are discussed separately as the case where observable security exceeds the measured trust-signal subtotal.
+
+---
+
+## Time Projection
+
+The framework also defines a projected score:
+
+```text
+TSGA_projected(t) = TSGA_base + (HRI_normalized * drift_rate * t)
+```
+
+The `drift_rate` parameter does not currently have an empirically validated value.
+
+For that reason, VibeAudit does not silently invent a drift rate. A projection is only produced when an explicit `drift_rate` is supplied.
+
+A longitudinal user study is required to empirically estimate this parameter.
+
+---
+
+## Limitations
+
+Several limitations are important when interpreting results:
+
+- JavaScript is not executed during the basic fetch workflow. Client-side-rendered pages may therefore appear nearly empty.
+- Multilingual pattern coverage is partial.
+- Privacy-policy detection currently covers multiple languages, but this is not exhaustive.
+- Trust-signal text detection covers only a subset of languages and may under-report non-Latin scripts and long-tail languages.
+- Response bodies are capped at 3 MB.
+- Non-HTML content is not text-scored, although HTTPS and response-header checks still apply.
+- Private, loopback, and link-local targets are blocked by default by the SSRF guard.
+- Security headers require a real HTTP fetch.
+- Visual trust signals cannot reliably be evaluated from raw HTML alone.
+- Additional text patterns in the current implementation are heuristic extensions and are not independently validated.
+- The UTST weights are theory-informed rather than empirically calibrated.
+- The HRI has not been empirically calibrated against repeated user exposure.
+- The `drift_rate` parameter requires longitudinal validation.
+- The pilot study described in the accompanying paper is limited in sample size and does not establish external validity.
+
+---
+
+## Research Paper
+
+**Explaining Away Security: XAI UI Patterns, Habituation, and the Trust-Security Gap in AI-Generated Interfaces**
+
+**Author:** Ishita Soryan
+**Institution:** SCSET, Bennett University
+
+The paper describes the theoretical framework, pilot study, scoring methodology, limitations, and future validation work associated with VibeAudit.
+
+An arXiv link and publication DOI will be added here once available.
+
+---
+
+## Citation
+
+If you use VibeAudit or the TSGA framework in academic work, please cite the accompanying research paper.
+
+```text
+Soryan, I. "Explaining Away Security: XAI UI Patterns, Habituation, and the Trust-Security Gap in AI-Generated Interfaces."
+```
+
+A formal citation identifier will be added after publication or arXiv submission.
+
+---
 
 ## License
 
-MIT (adjust as you prefer before publishing).
+This project is released under the MIT License. See [LICENSE](LICENSE).
