@@ -26,6 +26,7 @@ Thumbs.db
 *.log
 result.json
 results.json
+leaderboard.json
 
 # Local databases
 *.sqlite

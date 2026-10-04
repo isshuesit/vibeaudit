@@ -31,7 +31,7 @@ where:
 - **SPC** = Security Posture Checklist
 - **HRI** = Habituation Risk Index
 
-HRI is normalized to a 0–1 scale. When HRI is not assessed, the tool uses 0 for the multiplier and reports the HRI source as `not_assessed`.
+HRI is normalized to a 0–1 scale. When HRI is not assessed, the tool uses HRI = 0, so the multiplier remains 1, and reports the HRI source as not_assessed.
 
 The paper's pilot study evaluated 25 publicly accessible AI-generated or AI-assisted interfaces. The reported pilot scores ranged from **-7.87 to 10.80**.
 
@@ -42,6 +42,10 @@ The paper treats the negative-gap case separately: a negative score indicates th
 ## Current Implementation
 
 The current repository contains an expanded implementation of the paper's framework.
+
+### Paper Reproducibility Note
+
+The pilot results reported in the accompanying paper were produced using the earlier implementation described in the paper's methodology. The current repository contains subsequent extensions to the automated text-pattern checks. The current `main` branch should therefore be understood as the continuing implementation of the framework, rather than as an exact snapshot of the software state used for every pilot result.
 
 The research paper describes the automated evaluation used in its pilot as a smaller text-detectable subset of the UTST taxonomy. The repository has since been extended to include additional text-detectable patterns while retaining the paper's scoring framework.
 
@@ -242,14 +246,14 @@ If HRI is not assessed, the multiplier defaults to 1.
 
 The current implementation classifies scores as:
 
-| Score | Band |
-|---:|---|
-| < 2 | Low |
-| 2–5 | Moderate |
-| 5–8 | High |
-| ≥ 8 | Severe |
+Score	Band
+< 2	Low
+2.0–<5.0	Moderate
+5.0–<8.0	High
+≥ 8.0	Severe
 
-Negative scores are treated as part of the lowest band by the implementation. In the research paper, negative gaps are discussed separately as the case where observable security exceeds the measured trust-signal subtotal.
+
+Negative scores are treated as part of the lowest reporting band by the implementation. In the research paper, negative gaps are discussed separately because they represent cases where the observable security posture exceeds the measured trust-signal subtotal.
 
 ---
 
