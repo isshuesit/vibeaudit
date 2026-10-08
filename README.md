@@ -312,10 +312,9 @@ An arXiv link and publication DOI will be added here once available.
 If you use VibeAudit or the TSGA framework in academic work, please cite the accompanying research paper.
 
 ```text
-Soryan, I. "Explaining Away Security: XAI UI Patterns, Habituation, and the Trust-Security Gap in AI-Generated Interfaces."
+Soryan, I. "Explaining Away Security: XAI UI Patterns, Habituation, and the Trust-Security Gap in AI-Generated Interfaces. https://doi.org/10.5281/zenodo.23189673"
 ```
 
-A formal citation identifier will be added after publication or arXiv submission.
 
 ---
 
